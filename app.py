@@ -87,8 +87,23 @@ def fetch_alpha_vantage(ticker: str) -> dict:
     open_price = float(time_series[current_date]['1. open'])
     daily_change, daily_change_percent = calculate_change(current_price, open_price)
 
+    # Fetch company name from OVERVIEW endpoint (best-effort, may count against rate limit)
+    company_name = ticker.upper()
+    try:
+        overview_params = {
+            'function': 'OVERVIEW',
+            'symbol': ticker.upper(),
+            'apikey': ALPHA_VANTAGE_API_KEY,
+        }
+        overview_resp = requests.get(ALPHA_VANTAGE_BASE_URL, params=overview_params, timeout=10)
+        overview_data = overview_resp.json()
+        company_name = overview_data.get('Name', ticker.upper()) or ticker.upper()
+    except Exception:
+        pass
+
     result = {
         'symbol': ticker.upper(),
+        'name': company_name,
         'price': current_price,
         'currency': 'USD',
         'change': daily_change,
@@ -198,8 +213,11 @@ def fetch_yahoo_finance(ticker: str) -> dict:
     open_price = latest_open if latest_open else current_price
     daily_change, daily_change_percent = calculate_change(current_price, open_price)
 
+    company_name = meta.get('longName') or meta.get('shortName') or ticker.upper()
+
     result = {
         'symbol': ticker.upper(),
+        'name': company_name,
         'price': current_price,
         'currency': meta.get('currency', 'USD'),
         'change': daily_change,

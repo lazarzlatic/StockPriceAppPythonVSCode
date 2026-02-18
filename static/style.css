@@ -236,6 +236,43 @@ body {
 
 /* ─── Results ────────────────────────────────────────────────── */
 
+/* Stock Header */
+.stock-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    border-top: 2px solid #f0f0f0;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.stock-name {
+    font-size: 1.15em;
+    font-weight: 700;
+    color: #333;
+    line-height: 1.2;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stock-ticker-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    font-size: 0.85em;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
 .results {
     margin-top: 10px;
     animation: fadeIn 0.35s ease;

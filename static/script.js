@@ -80,6 +80,10 @@ function getSelectedApi() {
 function displayResult(data) {
     hideMessages();
 
+    // Stock Header
+    document.getElementById('stockName').textContent = data.name || data.symbol;
+    document.getElementById('stockTicker').textContent = data.symbol;
+
     // Current Price
     document.getElementById('currentPrice').textContent = formatPrice(data.price);
 
