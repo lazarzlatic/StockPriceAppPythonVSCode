@@ -6,7 +6,8 @@
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| Current stock price | ✅ | Real-time price from selected API |
+| Current stock price | ✅ | Real-time price from selected provider |
+| Company name display | ✅ | Full company name + ticker badge above price |
 | Daily change display | ✅ | Amount and percentage change for the day |
 | 5-day comparison | ✅ | Price from 5 trading days ago vs. current |
 | 30-day comparison | ✅ | Price from 30 trading days ago vs. current |
@@ -14,14 +15,18 @@
 | October 1st, 2025 price | ✅ | Historical fixed date comparison |
 | December 1st, 2025 price | ✅ | Historical fixed date comparison |
 
-### Dual API Support
+### Multi-Provider Support
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| Alpha Vantage integration | ✅ | TIME_SERIES_DAILY with full output |
-| Yahoo Finance integration | ✅ | Via Flask backend proxy route |
-| API toggle switch | ✅ | Visual slider to switch data source |
-| CORS bypass | ✅ | Backend proxy handles Yahoo Finance |
+| Alpha Vantage | ✅ | TIME_SERIES_DAILY + OVERVIEW for name |
+| Yahoo Finance | ✅ | Via Flask backend proxy (CORS bypass) |
+| FMP (Financial Modeling Prep) | ✅ | quote + historical-price-eod/light |
+| Massive.com | ✅ | aggregates/range + reference/tickers |
+| Provider pill selector | ✅ | 4-button pill group, active pill highlighted |
+| Single unified API route | ✅ | GET /api/<provider>/<ticker> |
+| Provider registry | ✅ | providers/__init__.py REGISTRY dict |
+| Extensible architecture | ✅ | Add provider = 1 file + 1 registry line |
 
 ### User Interface
 
@@ -29,7 +34,8 @@
 |---------|--------|-------------|
 | Gradient background | ✅ | Purple gradient (#667eea → #764ba2) |
 | Card layout | ✅ | White card with shadow and rounded corners |
-| Toggle switch animation | ✅ | 0.4s smooth slide animation |
+| Provider pill selector | ✅ | Pill button group replaces binary toggle |
+| Stock name header | ✅ | Company name + ticker badge with border lines |
 | Loading indicator | ✅ | Pulse animation during fetch |
 | Error messages | ✅ | User-friendly error display |
 | Visual indicators | ✅ | 🟢 green for gains, 🔴 red for losses |
@@ -47,11 +53,11 @@
 | .gitignore | ✅ | Protects secrets and venv |
 | requirements.txt | ✅ | All dependencies listed |
 | config.example.py | ✅ | Template for configuration |
-| .env.example | ✅ | Template for environment variables |
-| Health check endpoint | ✅ | /health route for monitoring |
+| .env.example | ✅ | All 4 provider keys listed as placeholders |
+| Health check endpoint | ✅ | /health lists all registered providers |
 | CORS enabled | ✅ | flask-cors configured |
-| Error handling | ✅ | try/except throughout backend |
-| Request logging | ✅ | Console output with emoji indicators |
+| Error handling | ✅ | try/except throughout all providers |
+| Request logging | ✅ | 📊 fetching / ✅ success per provider |
 
 ### Documentation
 
@@ -77,20 +83,46 @@
 | Dark mode | Low | Toggle UI theme |
 | More fixed dates | Low | User-configurable dates |
 
-## Data Fields Returned
+## Provider API Endpoints Summary
+
+### Alpha Vantage
+| Endpoint | Purpose |
+|----------|---------|
+| `TIME_SERIES_DAILY?outputsize=full` | Historical daily OHLC (20+ years) |
+| `OVERVIEW` | Company name (best-effort, costs 1 extra call) |
+
+### Yahoo Finance (unofficial)
+| Endpoint | Purpose |
+|----------|---------|
+| `/v8/finance/chart/<symbol>?range=1y&interval=1d` | 1-year daily chart + meta (name included) |
+
+### FMP (Financial Modeling Prep)
+| Endpoint | Purpose |
+|----------|---------|
+| `/stable/quote?symbol=<ticker>` | Current price, daily change, company name |
+| `/stable/historical-price-eod/light?symbol=<ticker>&from=<date>` | Daily close prices |
+
+### Massive.com (Polygon.io-compatible)
+| Endpoint | Purpose |
+|----------|---------|
+| `/v2/aggs/ticker/<ticker>/range/1/day/<from>/<to>` | Daily OHLC bars (current price + history) |
+| `/v3/reference/tickers/<ticker>` | Company name (best-effort) |
+
+## Data Fields Returned (all providers)
 
 ```
-symbol          - Stock ticker (e.g., "AAPL")
-price           - Current price (float)
-currency        - Currency code (e.g., "USD")
-change          - Daily change amount
-changePercent   - Daily change percentage
-timestamp       - Date of last price
-price5DaysAgo   - Price 5 trading days ago
-change5Days     - Change from 5 days ago to now
+symbol               - Stock ticker (e.g., "AAPL")
+name                 - Company name (e.g., "Apple Inc.")
+price                - Current price (float)
+currency             - Currency code (e.g., "USD")
+change               - Daily change amount
+changePercent        - Daily change percentage
+timestamp            - Date of last price
+price5DaysAgo        - Price 5 trading days ago
+change5Days          - Change from 5 days ago to now
 changePercent5Days
-price30DaysAgo  - Price 30 trading days ago
-change30Days    - Change from 30 days ago to now
+price30DaysAgo       - Price 30 trading days ago
+change30Days         - Change from 30 days ago to now
 changePercent30Days
 priceApril1_2025
 changeApril1

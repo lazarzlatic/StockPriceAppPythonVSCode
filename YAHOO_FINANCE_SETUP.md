@@ -2,7 +2,9 @@
 
 ## No API Key Required
 
-Yahoo Finance does not require an API key. However, it cannot be called directly from the browser due to CORS restrictions (see CORS_ISSUE_YAHOO_FINANCE.md).
+Yahoo Finance is the only provider that requires **no API key**. It works out of the box.
+However, it cannot be called directly from the browser due to CORS restrictions
+(see CORS_ISSUE_YAHOO_FINANCE.md). All providers are accessed through the Flask backend.
 
 ## How It Works
 
@@ -10,23 +12,34 @@ The Flask backend acts as a proxy:
 
 ```
 Browser (JavaScript)
-    → POST /api/yahoo-finance/AAPL   (same-origin, no CORS issue)
+    → GET /api/yahoo-finance/AAPL   (same-origin, no CORS issue)
         → Flask backend
             → Yahoo Finance API      (server-side, no CORS)
         ← Returns JSON
     ← Displays results
 ```
 
-## Flask Backend Route
+## Flask Backend Route (Unified)
+
+All providers share a single route in `app.py`:
 
 ```python
-@app.route('/api/yahoo-finance/<ticker>')
-def get_yahoo_finance(ticker: str):
+@app.route('/api/<provider>/<ticker>')
+def get_stock_data(provider: str, ticker: str):
+    fetch = get_provider(provider)   # looks up 'yahoo-finance' in REGISTRY
+    data = fetch(ticker)             # calls providers/yahoo_finance.py fetch()
+    return jsonify(data)
+```
+
+The Yahoo Finance fetch logic lives in `providers/yahoo_finance.py`:
+
+```python
+def fetch(ticker: str) -> dict:
     url = f'https://query2.finance.yahoo.com/v8/finance/chart/{ticker}'
     params = {'range': '1y', 'interval': '1d'}
     headers = {'User-Agent': 'Mozilla/5.0 ...'}
     response = requests.get(url, params=params, headers=headers)
-    # Parse and return structured JSON
+    # Parse and return structured dict
 ```
 
 ## Yahoo Finance API Details
@@ -36,6 +49,7 @@ def get_yahoo_finance(ticker: str):
 - **Method**: GET
 - **Authentication**: None required
 - **Rate Limits**: None officially published (unofficial API)
+- **Company Name**: extracted from `meta.longName` or `meta.shortName`
 
 ## Step-by-Step Usage
 
@@ -52,17 +66,18 @@ python app.py
 
 You should see:
 ```
-🚀 Starting Stock Price Check App on http://localhost:5000
-   Alpha Vantage API Key: ✅ configured   (or ❌ not set)
+🚀 Starting Stock Price Check App on http://localhost:8080
+   Alpha Vantage API Key : ✅ configured   (or ❌ not set)
+   Registered providers  : ['alpha-vantage', 'yahoo-finance', 'fmp', 'massive']
 ```
 
 ### 2. Open the app
 
-Navigate to: http://localhost:5000
+Navigate to: **http://localhost:8080**
 
 ### 3. Select Yahoo Finance
 
-Toggle the switch to the **right** (green position).
+Click the **Yahoo Finance** pill in the selector.
 
 ### 4. Enter a ticker
 
@@ -84,7 +99,7 @@ Yahoo Finance returns timestamps (Unix epoch) and price arrays:
 {
   "chart": {
     "result": [{
-      "meta": { "currency": "USD", "symbol": "AAPL" },
+      "meta": { "currency": "USD", "symbol": "AAPL", "longName": "Apple Inc." },
       "timestamp": [1704067200, 1704153600, ...],
       "indicators": {
         "quote": [{
@@ -98,20 +113,21 @@ Yahoo Finance returns timestamps (Unix epoch) and price arrays:
 ```
 
 The backend converts timestamps to `YYYY-MM-DD` strings and maps them to prices.
+Company name is extracted from `meta.longName` or `meta.shortName`.
 
 ## Common Issues
 
 **Port already in use:**
 ```bash
-# Find process using port 5000
-netstat -ano | findstr :5000      # Windows
-lsof -i :5000                     # macOS/Linux
+# Find process using port 8080
+netstat -ano | findstr :8080      # Windows
+lsof -i :8080                     # macOS/Linux
 
-# Kill the process or use a different port
-PORT=5001 python app.py
+# Or use a different port
+PORT=9000 python app.py
 ```
 
 **Yahoo Finance blocked:**
 - This uses an unofficial endpoint that may change
 - Try again after a few minutes
-- Switch to Alpha Vantage as a fallback
+- Switch to FMP or Alpha Vantage as a fallback

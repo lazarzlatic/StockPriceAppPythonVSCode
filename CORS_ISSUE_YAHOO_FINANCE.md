@@ -7,7 +7,7 @@ CORS (Cross-Origin Resource Sharing) is a browser security mechanism that blocks
 **Example of a CORS-blocked request:**
 
 ```
-Your page: http://localhost:5000
+Your page: http://localhost:8080
 Yahoo Finance: https://query2.finance.yahoo.com
 
 → Browser blocks this because the domains are different!
@@ -26,11 +26,22 @@ The browser will show an error like:
 
 ```
 Access to fetch at 'https://query2.finance.yahoo.com/...' from origin
-'http://localhost:5000' has been blocked by CORS policy: No
+'http://localhost:8080' has been blocked by CORS policy: No
 'Access-Control-Allow-Origin' header is present on the requested resource.
 ```
 
 Yahoo Finance does not include the `Access-Control-Allow-Origin` header in its responses, so browsers refuse to expose the data to JavaScript.
+
+## Which Providers Have CORS Issues
+
+| Provider | CORS Issue? | Reason |
+|----------|------------|--------|
+| Alpha Vantage | No | Includes CORS headers |
+| Yahoo Finance | **Yes** | No CORS headers (unofficial API) |
+| FMP | No | Includes CORS headers |
+| Massive | No | Includes CORS headers |
+
+All providers are called via Flask backend anyway, so CORS is never an issue in practice.
 
 ## The Solution: Flask Backend Proxy
 
@@ -39,7 +50,7 @@ A Flask route makes the request **server-side**, where CORS rules do not apply:
 ```
 Browser (blocked by CORS if direct)
     ↓
-Flask route /api/yahoo-finance/<ticker>   ← Same origin as the page
+Flask route /api/<provider>/<ticker>   ← Same origin as the page
     ↓
 requests.get('https://query2.finance.yahoo.com/...')  ← No CORS, server-to-server
     ↓
@@ -56,48 +67,49 @@ Returns JSON to browser
 
 ## Flask Implementation
 
+All providers go through the same unified route:
+
 ```python
-@app.route('/api/yahoo-finance/<ticker>')
-def get_yahoo_finance(ticker: str):
-    url = f'https://query2.finance.yahoo.com/v8/finance/chart/{ticker}'
-    headers = {'User-Agent': 'Mozilla/5.0 ...'}
-    response = requests.get(url, headers=headers)  # Server-side, no CORS
-    data = response.json()
-    # Parse and return
-    return jsonify(parsed_data)
+@app.route('/api/<provider>/<ticker>')
+def get_stock_data(provider: str, ticker: str):
+    fetch = get_provider(provider)
+    data = fetch(ticker)          # server-side request, no CORS
+    return jsonify(data)
 ```
 
-The JavaScript calls the Flask route (same origin):
+The JavaScript always calls our own Flask server:
 
 ```javascript
-// This WORKS - calling our own Flask server
+// This WORKS - calling our own Flask server (same origin)
 const response = await fetch('/api/yahoo-finance/AAPL');
+const response = await fetch('/api/fmp/AAPL');
 ```
 
 ## Flask-CORS
 
-The app also uses `flask-cors` to allow the browser to call Flask routes from different origins (if needed in future):
+The app also uses `flask-cors` to allow the browser to call Flask routes from different origins (useful if the frontend is ever served separately):
 
 ```python
 from flask_cors import CORS
 CORS(app)
 ```
 
-This adds the `Access-Control-Allow-Origin: *` header to Flask responses.
+This adds the `Access-Control-Allow-Origin: *` header to all Flask responses.
 
 ## Alternative Solutions
 
 | Solution | Pros | Cons |
 |----------|------|------|
-| Flask proxy (our approach) | Works, no API key needed | Must keep Flask running |
+| Flask proxy (our approach) | Works for all providers | Must keep Flask running |
 | Alpha Vantage | Official API, CORS-friendly | 25 calls/day limit |
+| FMP | Official API, CORS-friendly | Requires free key |
+| Massive | Official API, CORS-friendly | Requires free key |
 | CORS proxy services | Easy to set up | Third-party, not reliable |
-| Browser extension | Works locally | Requires extension installed |
 
 ## Summary
 
 - Yahoo Finance blocks browser JavaScript requests via CORS
-- Our Flask backend makes the request server-side (CORS does not apply)
-- The browser calls `/api/yahoo-finance/<ticker>` on our own Flask server
-- Flask forwards the request to Yahoo Finance and returns the data
+- All 4 providers are called via our Flask backend (server-side, no CORS)
+- The browser always calls `/api/<provider>/<ticker>` on our own Flask server
+- Flask forwards the request to the provider and returns the data
 - This is a common and valid pattern called a **backend proxy**

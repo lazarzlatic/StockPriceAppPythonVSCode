@@ -25,8 +25,8 @@ pip --version
 
 Option A - Clone with git:
 ```bash
-git clone <your-repo-url>
-cd StockPriceCheckApp
+git clone https://github.com/lazarzlatic/StockPriceAppPythonVSCode.git
+cd StockPriceAppPythonVSCode
 ```
 
 Option B - Download ZIP and extract to a folder.
@@ -88,28 +88,31 @@ This installs:
 pip list
 ```
 
-### Step 5: Configure Alpha Vantage API Key
+### Step 5: Configure API Keys
 
-1. Get a free key at: https://www.alphavantage.co/support/#api-key
-   (registration is free, takes ~1 minute)
+Copy the example file:
+```bash
+# Windows
+copy .env.example .env
 
-2. Create your `.env` file:
-   ```bash
-   # Windows
-   copy .env.example .env
+# macOS/Linux
+cp .env.example .env
+```
 
-   # macOS/Linux
-   cp .env.example .env
-   ```
+Open `.env` and add your keys:
+```
+ALPHA_VANTAGE_API_KEY=your_key   # https://www.alphavantage.co/support/#api-key
+FMP_API_KEY=your_key             # https://financialmodelingprep.com/register
+MASSIVE_API_KEY=your_key         # https://massive.com
+SECRET_KEY=any-random-string
+FLASK_ENV=development
+```
 
-3. Open `.env` and add your key:
-   ```
-   ALPHA_VANTAGE_API_KEY=your_actual_key_here
-   SECRET_KEY=any-random-string-here
-   FLASK_ENV=development
-   ```
-
-**Note:** Yahoo Finance works without any API key.
+**Notes:**
+- **Yahoo Finance** requires no key — works out of the box
+- **Alpha Vantage**: free key, 25 requests/day limit
+- **FMP**: free key, 250 requests/day limit
+- **Massive**: free key required
 
 ### Step 6: Run the Application
 
@@ -119,15 +122,18 @@ python app.py
 
 Expected output:
 ```
-🚀 Starting Stock Price Check App on http://localhost:5000
-   Alpha Vantage API Key: ✅ configured
- * Running on http://0.0.0.0:5000
+🚀 Starting Stock Price Check App on http://localhost:8080
+   Alpha Vantage API Key : ✅ configured   (or ❌ not set)
+   FMP API Key           : ✅ configured   (or ❌ not set)
+   Massive API Key       : ✅ configured   (or ❌ not set)
+   Registered providers  : ['alpha-vantage', 'yahoo-finance', 'fmp', 'massive']
+ * Running on http://0.0.0.0:8080
  * Debug mode: on
 ```
 
 ### Step 7: Open the App
 
-Open your browser and go to: **http://localhost:5000**
+Open your browser and go to: **http://localhost:8080**
 
 ## Deactivating the Virtual Environment
 
@@ -162,12 +168,20 @@ pip install -r requirements.txt
 - Make sure the virtual environment is activated (look for `(venv)` in prompt)
 - Run `pip install -r requirements.txt` again
 
-**Port 5000 already in use:**
+**Port 8080 already in use:**
 ```bash
-# Change the port
-PORT=5001 python app.py
-# Then open http://localhost:5001
+# Find process using port 8080
+netstat -ano | findstr :8080      # Windows
+lsof -i :8080                     # macOS/Linux
+
+# Or use a different port
+PORT=9000 python app.py
+# Then open http://localhost:9000
 ```
+
+**"API key not configured" error:**
+- Copy `.env.example` to `.env` and add the relevant key
+- Yahoo Finance works without any key
 
 **Permission denied (Windows):**
 - Run Command Prompt as Administrator

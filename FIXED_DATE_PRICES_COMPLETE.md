@@ -12,18 +12,22 @@ The app shows stock prices for three specific historical dates:
 
 ## Why 1 Year of Data is Required
 
-Both APIs are configured to fetch **1 full year** of daily data:
+All providers are configured to fetch **at least 1 full year** of daily data:
 
-- **Yahoo Finance**: `range=1y&interval=1d`
-- **Alpha Vantage**: `outputsize=full` (returns all available data)
+| Provider | Data Range | Configuration |
+|----------|-----------|---------------|
+| Alpha Vantage | 20+ years | `outputsize=full` |
+| Yahoo Finance | ~1 year | `range=1y&interval=1d` |
+| FMP | Flexible | `from=<400-days-ago>` |
+| Massive | ~1 year | date range from 400 days ago to today |
 
-If only 3 months of data were requested, April 1st and October 1st 2025 would not be available (they would be outside the 3-month window). Fetching 1 year ensures all three dates are covered.
+If only 3 months of data were requested, April 1st and October 1st 2025 would not be available. Fetching ~1 year ensures all three dates are covered.
 
 ## How Closest Trading Day is Found
 
 Stock markets are closed on weekends and holidays. The target dates (April 1, October 1, December 1) may not have price data if they fall on non-trading days.
 
-The `find_closest_date()` function searches outward from the target date:
+The `find_closest_date()` function in `providers/base.py` searches outward from the target date:
 
 ```python
 def find_closest_date(dates: list, target_date: str) -> str | None:
@@ -48,6 +52,18 @@ Day -2: 2025-03-30 → check
 ```
 
 The first date found in the data is used. Returns `None` if no trading day found within 7 days (extremely rare).
+
+## Shared Fixed Dates (providers/base.py)
+
+All providers use the same constants:
+
+```python
+FIXED_DATES = {
+    'april1_2025':    '2025-04-01',
+    'october1_2025':  '2025-10-01',
+    'december1_2025': '2025-12-01',
+}
+```
 
 ## Alpha Vantage Implementation
 
@@ -86,9 +102,40 @@ all_dates = list(date_price_map.keys())
 april_date = find_closest_date(all_dates, '2025-04-01')
 ```
 
+## FMP Implementation
+
+FMP returns an array of objects with date and close fields:
+
+```python
+# Response can be a flat array or {"historical": [...]}
+records = data if isinstance(data, list) else data.get('historical', [])
+
+# Records are newest-first: [{"date": "2025-04-01", "close": 170.23}, ...]
+date_price_map = {r['date']: r['close'] for r in records if r.get('close') is not None}
+
+all_dates = list(date_price_map.keys())
+april_date = find_closest_date(all_dates, '2025-04-01')
+```
+
+## Massive Implementation
+
+Massive returns aggregates (OHLCV bars) sorted descending:
+
+```python
+# results = [{"t": 1743465600000, "c": 170.23, ...}, ...]  (milliseconds)
+date_price_map = {}
+for bar in results:
+    ts_ms = bar['t']
+    date_str = datetime.fromtimestamp(ts_ms / 1000).strftime('%Y-%m-%d')
+    date_price_map[date_str] = round(bar['c'], 2)
+
+all_dates = list(date_price_map.keys())
+april_date = find_closest_date(all_dates, '2025-04-01')
+```
+
 ## Change Calculation
 
-Once the price for the fixed date is found, the change to current is calculated:
+Once the price for the fixed date is found, the change to current is calculated using `calculate_change()` in `providers/base.py`:
 
 ```python
 def calculate_change(current: float, previous: float) -> tuple:
@@ -133,9 +180,10 @@ The three date cards use CSS Grid with 3 columns:
 To verify the fixed dates work:
 
 1. Run `python app.py`
-2. Open http://localhost:5000
-3. Search for AAPL (available since 1980)
-4. Scroll down to see the 3 date cards
-5. All three should show a price
+2. Open http://localhost:8080
+3. Select any provider pill
+4. Search for AAPL
+5. Scroll down to see the 3 date cards
+6. All three should show a price
 
 If a date shows "No data", the market may have been closed for an extended period around that date, which is extremely unlikely for major US stocks.
