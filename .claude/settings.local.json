@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(powershell.exe -Command:*)",
+      "Bash(cmd /c:*)",
+      "Bash(grep:*)",
+      "Bash(cmd.exe /c:*)"
+    ]
+  }
+}

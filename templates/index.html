@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock Price Checker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1 class="title">📈 Stock Price Checker</h1>
+            <p class="subtitle">Enter a stock ticker to get the current price</p>
+
+            <!-- API Toggle Switch -->
+            <div class="api-toggle-section">
+                <span class="toggle-label">Data Source:</span>
+                <div class="toggle-wrapper">
+                    <span class="api-name" id="apiNameLeft">Alpha Vantage</span>
+                    <label class="toggle-switch" title="Switch between Alpha Vantage and Yahoo Finance">
+                        <input type="checkbox" id="apiToggle" />
+                        <span class="slider"></span>
+                    </label>
+                    <span class="api-name" id="apiNameRight">Yahoo Finance</span>
+                </div>
+            </div>
+
+            <!-- Search Input -->
+            <div class="search-row">
+                <input
+                    type="text"
+                    id="tickerInput"
+                    class="ticker-input"
+                    placeholder="Enter stock ticker (e.g., AAPL, MSFT, GOOGL)"
+                    autocomplete="off"
+                    autocapitalize="characters"
+                    maxlength="10"
+                />
+                <button id="priceBtn" class="price-btn" onclick="handlePriceClick()">Price</button>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loading" class="loading hidden">
+                <div class="pulse-dot"></div>
+                <span>Loading...</span>
+            </div>
+
+            <!-- Error Display -->
+            <div id="errorBox" class="error-box hidden">
+                <span id="errorMessage"></span>
+            </div>
+
+            <!-- Results Display -->
+            <div id="results" class="results hidden">
+                <!-- Current Price -->
+                <div class="current-price-section">
+                    <div class="price-label">Current Price</div>
+                    <div class="price-value" id="currentPrice">—</div>
+                    <div class="daily-change" id="dailyChange"></div>
+                </div>
+
+                <!-- Historical Prices -->
+                <div class="historical-grid">
+                    <!-- 5 Days Ago -->
+                    <div class="hist-card">
+                        <div class="hist-label">5 Days Ago (-5)</div>
+                        <div class="hist-price" id="price5Days">—</div>
+                        <div class="hist-change" id="change5Days"></div>
+                    </div>
+
+                    <!-- 30 Days Ago -->
+                    <div class="hist-card">
+                        <div class="hist-label">30 Days Ago (-30)</div>
+                        <div class="hist-price" id="price30Days">—</div>
+                        <div class="hist-change" id="change30Days"></div>
+                    </div>
+                </div>
+
+                <!-- Fixed Date Prices -->
+                <div class="fixed-dates-section">
+                    <div class="section-divider">
+                        <span>Fixed Date Prices</span>
+                    </div>
+                    <div class="fixed-dates-grid">
+                        <!-- April 1st, 2025 -->
+                        <div class="date-card">
+                            <div class="date-label">April 1st, 2025</div>
+                            <div class="date-price" id="priceApril">—</div>
+                            <div class="date-change" id="changeApril"></div>
+                        </div>
+
+                        <!-- October 1st, 2025 -->
+                        <div class="date-card">
+                            <div class="date-label">October 1st, 2025</div>
+                            <div class="date-price" id="priceOctober">—</div>
+                            <div class="date-change" id="changeOctober"></div>
+                        </div>
+
+                        <!-- December 1st, 2025 -->
+                        <div class="date-card">
+                            <div class="date-label">December 1st, 2025</div>
+                            <div class="date-price" id="priceDecember">—</div>
+                            <div class="date-change" id="changeDecember"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Info -->
+                <div class="result-footer">
+                    <span id="currencyLabel">Currency: USD</span>
+                    <span id="lastUpdated"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
