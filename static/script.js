@@ -64,11 +64,12 @@ function showLoading() {
 }
 
 /**
- * Get which API is currently selected.
- * @returns {'alpha-vantage' | 'yahoo-finance'}
+ * Get the provider slug of the currently active pill.
+ * @returns {string} e.g. 'alpha-vantage', 'yahoo-finance', 'fmp'
  */
 function getSelectedApi() {
-    return document.getElementById('apiToggle').checked ? 'yahoo-finance' : 'alpha-vantage';
+    const active = document.querySelector('.api-pill.active');
+    return active ? active.dataset.provider : 'yahoo-finance';
 }
 
 // ─── Display Result ───────────────────────────────────────────────────────────
@@ -223,7 +224,7 @@ async function handlePriceClick() {
     } catch (err) {
         console.error('Fetch error:', err);
         if (err instanceof TypeError && err.message.includes('fetch')) {
-            showError('Cannot connect to the server. Please make sure the Flask app is running on port 5000.');
+            showError('Cannot connect to the server. Please make sure the Flask app is running on port 8080.');
         } else {
             showError(`Network error: ${err.message}. Please try again.`);
         }
@@ -242,26 +243,18 @@ document.getElementById('tickerInput').addEventListener('keydown', function (e) 
     }
 });
 
-// Toggle switch - update active API label
-document.getElementById('apiToggle').addEventListener('change', function () {
-    const isYahoo = this.checked;
-    const leftLabel = document.getElementById('apiNameLeft');
-    const rightLabel = document.getElementById('apiNameRight');
-
-    if (isYahoo) {
-        leftLabel.classList.remove('active');
-        rightLabel.classList.add('active');
-    } else {
-        leftLabel.classList.add('active');
-        rightLabel.classList.remove('active');
-    }
-
-    // Clear previous results when switching API
-    hideMessages();
+// Pill selector — activate clicked pill and clear previous results
+document.querySelectorAll('.api-pill').forEach(function (pill) {
+    pill.addEventListener('click', function () {
+        document.querySelectorAll('.api-pill').forEach(function (p) {
+            p.classList.remove('active');
+        });
+        this.classList.add('active');
+        hideMessages();
+    });
 });
 
-// Focus input on page load and set initial active label
+// Focus input on page load
 window.addEventListener('load', function () {
     document.getElementById('tickerInput').focus();
-    document.getElementById('apiNameLeft').classList.add('active');
 });

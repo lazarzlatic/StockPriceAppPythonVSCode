@@ -12,16 +12,14 @@
             <h1 class="title">📈 Stock Price Checker</h1>
             <p class="subtitle">Enter a stock ticker to get the current price</p>
 
-            <!-- API Toggle Switch -->
-            <div class="api-toggle-section">
-                <span class="toggle-label">Data Source:</span>
-                <div class="toggle-wrapper">
-                    <span class="api-name" id="apiNameLeft">Alpha Vantage</span>
-                    <label class="toggle-switch" title="Switch between Alpha Vantage and Yahoo Finance">
-                        <input type="checkbox" id="apiToggle" />
-                        <span class="slider"></span>
-                    </label>
-                    <span class="api-name" id="apiNameRight">Yahoo Finance</span>
+            <!-- API Selector -->
+            <div class="api-selector">
+                <span class="api-selector-label">Data Source:</span>
+                <div class="api-pills">
+                    <button class="api-pill active" data-provider="alpha-vantage">Alpha Vantage</button>
+                    <button class="api-pill" data-provider="yahoo-finance">Yahoo Finance</button>
+                    <button class="api-pill" data-provider="fmp">FMP</button>
+                    <button class="api-pill" data-provider="massive">Massive</button>
                 </div>
             </div>
 

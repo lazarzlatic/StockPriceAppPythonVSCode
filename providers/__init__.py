@@ -14,11 +14,15 @@ The URL slug (e.g. 'alpha-vantage') is used directly in the API route:
 
 from .alpha_vantage import fetch as _fetch_alpha_vantage
 from .yahoo_finance import fetch as _fetch_yahoo_finance
+from .fmp import fetch as _fetch_fmp
+from .massive import fetch as _fetch_massive
 
 # Maps URL slug → fetch function
 REGISTRY: dict = {
     'alpha-vantage': _fetch_alpha_vantage,
     'yahoo-finance': _fetch_yahoo_finance,
+    'fmp':           _fetch_fmp,
+    'massive':       _fetch_massive,
 }
 
 
